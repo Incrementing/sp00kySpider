@@ -18,6 +18,16 @@ class Utils():
         else:
             return raw_input(a)
 
+    @classmethod
+    def getLinks(self, a):
+        html = urllib.urlopen(a).read()
+        soup = BeautifulSoup(html)
+
+        l = []
+        for tag in soup.findAll('a', href=True):
+            l.append(urlparse.urljoin(a, tag['href']))
+        return l
+
 class Config():
     def __init__(self, output_path, output_name):
         self.setupFile(output_path, output_name)
@@ -54,6 +64,10 @@ class Crawl():
 
     @classmethod
     def doCrawl(self, uri):
+        if (not "http" in uri):
+            print("\nPlease make sure you enter a url.")
+            Crawl.doCrawl(Utils.compatible_input("Please enter a URI to be crawled: "))
+
         self.uri = uri
         self.links = []
         print("Crawl on " + self.uri + " has started!")
@@ -61,15 +75,19 @@ class Crawl():
 
         # This is going to get messy.
         # Crawl - Start
-        html = urllib.urlopen(self.uri).read()
-        soup = BeautifulSoup(html)
-        i = 0
-        for tag in soup.findAll('a', href=True):
-            toAdd = urlparse.urljoin(self.uri, tag['href'])
-            if (not toAdd in self.links):
-                self.links.append(toAdd)
-                i += 1
-                print(str(i) + " links found.")
+        toCrawl = [self.uri]
+        while (len(toCrawl) > 0):
+            print(str(len(toCrawl)))
+            for link in Utils.getLinks(toCrawl[0]):
+                if (not link.lower() in self.links):
+                    self.links.append(link.lower())
+                    try:
+                        toCrawl.pop(0)
+                    except:
+                        pass
+                    if (self.uri.lower() in link.lower() or self.uri.lower() == link.lower()):
+                        toCrawl.append(link.lower())
+                        print(link.lower() + " added to crawl list (" + str(len(toCrawl)) + ").")
         # Crawl - End
 
         self.end_time = datetime.datetime.now()
@@ -89,6 +107,7 @@ class Crawl():
 def main():
     config = Config(output_path="/home/ad/Desktop/", output_name="crawl_log.txt")
     Crawl.doCrawl(Utils.compatible_input("Please enter a URI to be crawled: "))
+
     Crawl.save()
 
 if __name__ == '__main__':
