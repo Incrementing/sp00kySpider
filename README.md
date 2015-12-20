@@ -5,4 +5,4 @@ Dependencies:
 - BeautifulSoup4 (https://pypi.python.org/pypi/beautifulsoup4/4.4.1)
 
 Known Bugs:
-- Crawls the whole f***ing web not just urls owned by that domain.
+- Only grabs links on the page. (Todo: Make it crawl all links starting with entered url)
