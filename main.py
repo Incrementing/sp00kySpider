@@ -2,7 +2,10 @@
 import os
 import sys
 import time
+import urllib
 import datetime
+import urlparse
+from bs4 import BeautifulSoup
 
 class Utils():
     def __init__(self):
@@ -17,7 +20,7 @@ class Utils():
 
 class Config():
     def __init__(self, output_path, output_name):
-    	self.setupFile(output_path, output_name)
+        self.setupFile(output_path, output_name)
         print("Checking if output file exists...")
         if (not os.path.isfile(output_path + output_name)):
             print("File doesn't exists. Making it...")
@@ -34,8 +37,8 @@ class Config():
 
     @classmethod
     def setupFile(self, a, b):
-    	self.output_path = a
-    	self.output_name = b
+        self.output_path = a
+        self.output_name = b
 
     @classmethod
     def name(self):
@@ -52,11 +55,31 @@ class Crawl():
     @classmethod
     def doCrawl(self, uri):
         self.uri = uri
-        self.emails = ["None"]
-        self.links = ["None"]
+        self.links = []
         print("Crawl on " + self.uri + " has started!")
         self.start_time = datetime.datetime.now()
-        #crawl code here
+
+        # This is going to get messy.
+        # Crawl - Start
+        queued = [uri]
+        while (len(queued) > 0):
+            try:
+                html = urllib.urlopen(queued[0]).read()
+            except:
+                pass
+
+            soup = BeautifulSoup(html)
+            self.links.append(queued[0])
+            queued.pop(0)
+
+            for tag in soup.findAll('a', href=True):
+                toAdd = urlparse.urljoin(self.uri, tag['href'])
+
+                if (not toAdd in self.links):
+                    queued.append(toAdd)
+                    print(toAdd + " has been queued for crawling.")
+        # Crawl - End
+
         self.end_time = datetime.datetime.now()
         print("Crawl on " + self.uri + " is over!")
 
@@ -65,9 +88,8 @@ class Crawl():
         elapsed = self.end_time - self.start_time
         elapsed = divmod(elapsed.total_seconds(), 60)
         file_ = Config.file()
-        file_.write(" ")
+        file_.write(" \n")
         file_.write("Crawl on \"" + self.uri + "\" started on " + time.strftime("%d/%m/%Y @ %I:%M:%S"))
-        file_.write("\nEmails found: %s" %','.join(str(x) for x in self.emails))
         file_.write("\nLinks found: %s" %','.join(str(x) for x in self.links))
         file_.write("\nCrawl completed in %d seconds" %elapsed[1])
         print("Information about this crawl has been saved to \"" + Config.output_path + Config.output_name + "\".")
