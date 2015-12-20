@@ -61,23 +61,15 @@ class Crawl():
 
         # This is going to get messy.
         # Crawl - Start
-        queued = [uri]
-        while (len(queued) > 0):
-            try:
-                html = urllib.urlopen(queued[0]).read()
-            except:
-                pass
-
-            soup = BeautifulSoup(html)
-            self.links.append(queued[0])
-            queued.pop(0)
-
-            for tag in soup.findAll('a', href=True):
-                toAdd = urlparse.urljoin(self.uri, tag['href'])
-
-                if (not toAdd in self.links):
-                    queued.append(toAdd)
-                    print(toAdd + " has been queued for crawling.")
+        html = urllib.urlopen(self.uri).read()
+        soup = BeautifulSoup(html)
+        i = 0
+        for tag in soup.findAll('a', href=True):
+            toAdd = urlparse.urljoin(self.uri, tag['href'])
+            if (not toAdd in self.links):
+                self.links.append(toAdd)
+                i += 1
+                print(str(i) + " links found.")
         # Crawl - End
 
         self.end_time = datetime.datetime.now()
@@ -88,9 +80,9 @@ class Crawl():
         elapsed = self.end_time - self.start_time
         elapsed = divmod(elapsed.total_seconds(), 60)
         file_ = Config.file()
-        file_.write(" \n")
+        file_.write("\n\n")
         file_.write("Crawl on \"" + self.uri + "\" started on " + time.strftime("%d/%m/%Y @ %I:%M:%S"))
-        file_.write("\nLinks found: %s" %','.join(str(x) for x in self.links))
+        file_.write("\nLinks found: %s" %', '.join(str(x) for x in self.links))
         file_.write("\nCrawl completed in %d seconds" %elapsed[1])
         print("Information about this crawl has been saved to \"" + Config.output_path + Config.output_name + "\".")
 
